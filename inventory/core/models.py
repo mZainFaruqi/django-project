@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.mail import send_mail
+from inventory import settings
 
 # Create your CustomUserManager here.
 class CustomUserManager(BaseUserManager):
@@ -57,3 +60,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+
+
+#Django signals method
+@receiver(post_save,sender=User)
+def send_mail_after_user_creation(sender,instance,**kwargs):
+    print(sender.objects.get(email=instance.email))
+    mail_subject = "Account created"
+    message = "Account Created in celery app"
+    to_email = instance.email
+    send_mail(
+        subject=mail_subject,
+        message=message,
+        from_email=settings.EMAIL_HOST_USER,
+        recipient_list=[to_email],
+        fail_silently=True
+    )
+
+    print("done")
+
+
